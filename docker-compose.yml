@@ -1,0 +1,24 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: medstock-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-medstock}
+      POSTGRES_USER: ${DB_USERNAME:-medstock}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-medstock}
+    ports:
+      - "5432:5432"
+    volumes:
+      - medstock-postgres-data:/var/lib/postgresql/data
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./database/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql:ro
+      - ./database/indexes.sql:/docker-entrypoint-initdb.d/03-indexes.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-medstock} -d ${DB_NAME:-medstock}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  medstock-postgres-data:
