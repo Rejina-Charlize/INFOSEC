@@ -1,10 +1,10 @@
 # MedStock
 
-MedStock is organized as a React/Vite frontend, a Java 21/Spring Boot REST API, and a PostgreSQL database. The administrator inventory screen is backed by the API; it does not contain hardcoded medicine rows.
+MedStock is organized as a React/Vite frontend, a Java 25/Spring Boot REST API, and a PostgreSQL database. The administrator inventory screen is backed by the API; it does not contain hardcoded medicine rows.
 
 ## Requirements
 
-- Java 21
+- Java 25
 - Maven 3.9+
 - Node.js 20.19+ and npm
 - Docker Desktop (or a local PostgreSQL 16+ instance)
