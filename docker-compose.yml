@@ -1,24 +1,21 @@
 services:
-  postgres:
-    image: postgres:17-alpine
-    container_name: medstock-postgres
+  mongodb:
+    image: mongo:8
+    container_name: medstock-mongodb
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ${DB_NAME:-medstock}
-      POSTGRES_USER: ${DB_USERNAME:-medstock}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-medstock}
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:-medstock}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-change-this-local-password}
+      MONGO_INITDB_DATABASE: medstock
     ports:
-      - "5432:5432"
+      - "27017:27017"
     volumes:
-      - medstock-postgres-data:/var/lib/postgresql/data
-      - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
-      - ./database/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql:ro
-      - ./database/indexes.sql:/docker-entrypoint-initdb.d/03-indexes.sql:ro
+      - medstock-mongodb-data:/data/db
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-medstock} -d ${DB_NAME:-medstock}"]
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
       interval: 5s
       timeout: 5s
       retries: 10
 
 volumes:
-  medstock-postgres-data:
+  medstock-mongodb-data:

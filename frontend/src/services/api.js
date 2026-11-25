@@ -6,24 +6,10 @@ const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
-  const token = sessionStorage.getItem("medstock-token");
-  if (token) config.headers.Authorization = `Bearer ${token}`;
+  const credentials = sessionStorage.getItem("medstock-auth");
+  if (credentials) config.headers.Authorization = `Basic ${credentials}`;
   return config;
 });
-
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response && error.response.status === 401) {
-      sessionStorage.removeItem("medstock-token");
-      sessionStorage.removeItem("medstock-user");
-      if (window.location.pathname !== "/login") {
-        window.location.replace("/login");
-      }
-    }
-    return Promise.reject(error);
-  },
-);
 
 export async function fetchMedicines(params) {
   const { data } = await api.get("/medicines", { params });
@@ -54,19 +40,15 @@ export async function adjustStock(id, payload) {
   return data;
 }
 
-export async function createStaffAccount(username, password) {
-  const { data } = await api.post("/admin/accounts", { username, password });
-  return data;
-}
-
 export async function signIn(username, password) {
-  const { data } = await api.post("/auth/login", { username, password });
-  sessionStorage.setItem("medstock-token", data.token);
-  sessionStorage.setItem("medstock-user", JSON.stringify({ username: data.username, role: data.role }));
+  const credentials = btoa(`${username}:${password}`);
+  const { data } = await api.get("/auth/me", {
+    headers: { Authorization: `Basic ${credentials}` },
+  });
+  sessionStorage.setItem("medstock-auth", credentials);
   return data;
 }
 
 export function signOut() {
-  sessionStorage.removeItem("medstock-token");
-  sessionStorage.removeItem("medstock-user");
+  sessionStorage.removeItem("medstock-auth");
 }
