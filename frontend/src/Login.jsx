@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowLeft, Eye, EyeOff, LockKeyhole, Package, ShieldCheck, UserRound } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff, LockKeyhole, Package, ShieldCheck, UserRound, Pill, Stethoscope, HeartPulse, Activity, Syringe } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { signIn, signOut } from "./services/api.js";
 
@@ -60,12 +60,33 @@ export default function Login() {
           <h1>Keep every medicine.<br />Every batch. Every time.</h1>
           <p>Secure inventory management for modern pharmacy teams.</p>
           <div className="login-security-note"><ShieldCheck size={16} /><div><strong>Protected workspace</strong><span>Role-based access and audited stock movements</span></div></div>
+
+        <div className="login-medical-watermark" aria-hidden="true">
+          <Pill size={80} className="wm-icon wm-1" />
+          <HeartPulse size={72} className="wm-icon wm-2" />
+          <Stethoscope size={64} className="wm-icon wm-3" />
+          <Activity size={56} className="wm-icon wm-4" />
+          <Syringe size={48} className="wm-icon wm-5" />
+          <ShieldCheck size={40} className="wm-icon wm-6" />
+          <Pill size={36} className="wm-icon wm-7" />
+          <HeartPulse size={32} className="wm-icon wm-8" />
+        </div>
         </div>
 
       
       </section>
 
       <section className="login-form-panel">
+        <div className="login-form-watermark" aria-hidden="true">
+          <Pill size={96} className="wm-icon wm-1" />
+          <HeartPulse size={88} className="wm-icon wm-2" />
+          <Stethoscope size={80} className="wm-icon wm-3" />
+          <Activity size={72} className="wm-icon wm-4" />
+          <Syringe size={64} className="wm-icon wm-5" />
+          <ShieldCheck size={56} className="wm-icon wm-6" />
+          <Pill size={48} className="wm-icon wm-7" />
+          <HeartPulse size={44} className="wm-icon wm-8" />
+        </div>
         <button className="login-back" type="button" onClick={() => navigate("/admin/inventory")}><ArrowLeft size={15} /> Back to inventory</button>
         <div className="login-card">
           {currentStaff && (

@@ -17,8 +17,8 @@ export default function ReportCharts({ categoryData }) {
   const totalStock = categoryData.reduce((sum, item) => sum + item.stock, 0);
   return <>
     <section className="module-card chart-card">
-      <div className="module-card-heading"><div><h2>Monthly sales trend</h2><p>Illustrative totals · USD</p></div><span className="chart-period">Last 6 months</span></div>
-      <div className="chart-wrap"><ResponsiveContainer width="100%" height="100%"><BarChart data={monthlySales} margin={{ top: 12, right: 12, left: 0, bottom: 0 }}><CartesianGrid stroke="#edf1f6" vertical={false} /><XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: "#8b96a5", fontSize: 10 }} /><YAxis axisLine={false} tickLine={false} tick={{ fill: "#8b96a5", fontSize: 9 }} tickFormatter={(value) => `$${value / 1000}k`} /><Tooltip formatter={(value) => formatCurrency(value)} /><Bar dataKey="sales" name="Sales" fill="#3975f1" radius={[5, 5, 0, 0]} /></BarChart></ResponsiveContainer></div>
+      <div className="module-card-heading"><div><h2>Monthly sales trend</h2><p>Illustrative totals · PHP</p></div><span className="chart-period">Last 6 months</span></div>
+      <div className="chart-wrap"><ResponsiveContainer width="100%" height="100%"><BarChart data={monthlySales} margin={{ top: 12, right: 12, left: 0, bottom: 0 }}><CartesianGrid stroke="#edf1f6" vertical={false} /><XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: "#8b96a5", fontSize: 10 }} /><YAxis axisLine={false} tickLine={false} tick={{ fill: "#8b96a5", fontSize: 9 }} tickFormatter={(value) => `₱${value / 1000}k`} /><Tooltip formatter={(value) => formatCurrency(value)} /><Bar dataKey="sales" name="Sales" fill="#3975f1" radius={[5, 5, 0, 0]} /></BarChart></ResponsiveContainer></div>
     </section>
     <section className="module-card chart-card">
       <div className="module-card-heading"><div><h2>Stock by category</h2><p>Current available units</p></div></div>
@@ -31,5 +31,5 @@ export default function ReportCharts({ categoryData }) {
 }
 
 function formatCurrency(value) {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 2 }).format(Number(value));
+  return new Intl.NumberFormat("en-PH", { style: "currency", currency: "PHP", maximumFractionDigits: 2 }).format(Number(value));
 }

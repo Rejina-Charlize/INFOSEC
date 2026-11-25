@@ -186,7 +186,36 @@ button:disabled { cursor: not-allowed; }
 }
 .login-security-note div { display: grid; gap: 3px; }
 .login-security-note strong { color: #dce6f7; font-size: 10px; }
-.login-security-note span { color: #8798b1; font-size: 9px; }
+.login-medical-watermark,
+.login-form-watermark {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+.login-medical-watermark { opacity: 0.06; color: #ffffff; }
+.login-form-watermark { opacity: 0.04; color: #1e3a5f; }
+.login-medical-watermark .wm-icon,
+.login-form-watermark .wm-icon {
+  position: absolute;
+}
+.login-medical-watermark .wm-1 { top: 8%; left: 6%; }
+.login-medical-watermark .wm-2 { top: 12%; right: 10%; }
+.login-medical-watermark .wm-3 { top: 35%; left: 18%; }
+.login-medical-watermark .wm-4 { top: 42%; right: 8%; }
+.login-medical-watermark .wm-5 { top: 60%; left: 10%; }
+.login-medical-watermark .wm-6 { top: 55%; right: 22%; }
+.login-medical-watermark .wm-7 { bottom: 10%; left: 30%; }
+.login-medical-watermark .wm-8 { bottom: 15%; right: 35%; }
+.login-form-watermark .wm-1 { top: 5%; left: 8%; }
+.login-form-watermark .wm-2 { top: 10%; right: 12%; }
+.login-form-watermark .wm-3 { top: 30%; left: 15%; }
+.login-form-watermark .wm-4 { top: 38%; right: 6%; }
+.login-form-watermark .wm-5 { top: 55%; left: 12%; }
+.login-form-watermark .wm-6 { top: 50%; right: 20%; }
+.login-form-watermark .wm-7 { bottom: 8%; left: 25%; }
+.login-form-watermark .wm-8 { bottom: 12%; right: 30%; }
 .login-brand-footer {
   position: relative;
   z-index: 1;

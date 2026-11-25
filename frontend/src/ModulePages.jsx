@@ -334,7 +334,7 @@ function downloadCsv(filename, headers, rows) {
 
 function formatCurrency(value) {
   if (value === null || value === undefined || value === "") return "—";
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 2 }).format(Number(value));
+  return new Intl.NumberFormat("en-PH", { style: "currency", currency: "PHP", maximumFractionDigits: 2 }).format(Number(value));
 }
 function formatDate(value) {
   if (!value) return "—";
