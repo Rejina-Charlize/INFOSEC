@@ -47,8 +47,10 @@ function App() {
   const requestParams = useMemo(() => ({
     page, size: PAGE_SIZE, search: query.trim() || undefined,
     category: filters.category || undefined, prescription: filters.prescription || undefined,
-    stock: filters.stock || undefined,
-    expiry: activeTab === "all" ? filters.expiry || undefined : activeTab,
+    stock: activeTab === "low" ? "low" : filters.stock || undefined,
+    expiry: activeTab === "expiring" ? "soon"
+      : activeTab === "expired" ? "expired"
+        : filters.expiry || undefined,
   }), [page, query, filters, activeTab]);
 
   const loadData = useCallback(async () => {

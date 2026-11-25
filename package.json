@@ -7,7 +7,7 @@
     "start": "node backend/src/server.js",
     "dev:api": "node --watch backend/src/server.js",
     "dev:web": "vite frontend --config frontend/vite.config.js",
-    "test": "node --test backend/test",
+    "test": "node --test",
     "build": "vite build frontend --config frontend/vite.config.js",
     "lint": "oxlint frontend/src backend/src backend/test"
   },

@@ -1,9 +1,12 @@
-import "dotenv/config";
 import bcrypt from "bcryptjs";
+import dotenv from "dotenv";
 import mongoose from "mongoose";
+import { fileURLToPath } from "node:url";
 import app from "./app.js";
 import Category from "./models/Category.js";
 import StaffAccount from "./models/StaffAccount.js";
+
+dotenv.config({ path: fileURLToPath(new URL("../.env", import.meta.url)) });
 
 const defaultCategories = [
   ["Analgesics", "Medicines used for pain relief"],

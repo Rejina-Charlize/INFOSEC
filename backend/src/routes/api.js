@@ -86,7 +86,13 @@ router.get("/medicines", asyncHandler(async (request, response) => {
   const query = { archived: false };
   if (search) {
     const term = new RegExp(escapeRegex(search), "i");
-    query.$or = [{ name: term }, { genericName: term }, { brandName: term }, { sku: term }];
+    query.$or = [
+      { name: term },
+      { genericName: term },
+      { brandName: term },
+      { sku: term },
+      { "batches.batchNumber": term },
+    ];
   }
   if (category) query.category = new RegExp(`^${escapeRegex(category)}$`, "i");
   if (prescription != null) query.prescriptionRequired = prescription;
@@ -94,7 +100,8 @@ router.get("/medicines", asyncHandler(async (request, response) => {
   const medicines = await Medicine.find(query).sort({ name: 1 }).lean();
   const matching = medicines.filter((medicine) => matchesInventoryFilters(medicine, { stock, expiry }));
   const totalElements = matching.length;
-  const content = matching.slice(page * size, (page + 1) * size).map(toMedicineResponse);
+  const content = matching.slice(page * size, (page + 1) * size)
+    .map((medicine) => toMedicineResponse(medicine));
   const totalPages = Math.ceil(totalElements / size);
   response.json({
     content,
