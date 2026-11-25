@@ -1,0 +1,13 @@
+{
+  "name": "medstock",
+  "private": true,
+  "workspaces": [
+    "frontend"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace medstock-frontend",
+    "build": "npm run build --workspace medstock-frontend",
+    "lint": "npm run lint --workspace medstock-frontend",
+    "preview": "npm run preview --workspace medstock-frontend"
+  }
+}

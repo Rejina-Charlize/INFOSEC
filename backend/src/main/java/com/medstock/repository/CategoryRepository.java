@@ -4,10 +4,10 @@ import com.medstock.entity.Category;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.mongodb.repository.MongoRepository;
 
-public interface CategoryRepository extends JpaRepository<Category, UUID> {
+public interface CategoryRepository extends MongoRepository<Category, UUID> {
     List<Category> findAllByActiveTrueOrderByNameAsc();
-    Optional<Category> findByNameIgnoreCaseAndActiveTrue(String name);
-    boolean existsByNameIgnoreCase(String name);
+    Optional<Category> findByNormalizedNameAndActiveTrue(String normalizedName);
+    boolean existsByNormalizedName(String normalizedName);
 }

@@ -1,52 +1,41 @@
 package com.medstock.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Version;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
+import org.springframework.data.mongodb.core.mapping.Document;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.UUID;
 
-@Entity
-@Table(name = "medicine_batches", uniqueConstraints = @UniqueConstraint(columnNames = {"medicine_id", "batch_number"}))
+@Document("medicine_batches")
+@CompoundIndex(name = "medicine_batch_unique", def = "{'medicineId': 1, 'batchNumber': 1}", unique = true)
 public class MedicineBatch {
     public enum Status { AVAILABLE, QUARANTINED, UNAVAILABLE }
 
     @Id
     private UUID id;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "medicine_id", nullable = false)
-    private Medicine medicine;
+    private UUID medicineId;
 
-    @Column(name = "batch_number", nullable = false, length = 100)
     private String batchNumber;
 
-    @Column(name = "expiration_date", nullable = false)
     private LocalDate expirationDate;
 
-    @Column(name = "current_quantity", nullable = false)
     private int currentQuantity;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
     private Status status;
 
-    @Column(name = "created_at", nullable = false)
     private Instant createdAt;
+
+    @Version
+    private Long version;
 
     protected MedicineBatch() {}
 
     public MedicineBatch(Medicine medicine, String batchNumber, LocalDate expirationDate, int quantity) {
         this.id = UUID.randomUUID();
-        this.medicine = medicine;
+        this.medicineId = medicine.getId();
         this.batchNumber = batchNumber;
         this.expirationDate = expirationDate;
         this.currentQuantity = quantity;
@@ -61,7 +50,7 @@ public class MedicineBatch {
     }
 
     public UUID getId() { return id; }
-    public Medicine getMedicine() { return medicine; }
+    public UUID getMedicineId() { return medicineId; }
     public String getBatchNumber() { return batchNumber; }
     public LocalDate getExpirationDate() { return expirationDate; }
     public int getCurrentQuantity() { return currentQuantity; }

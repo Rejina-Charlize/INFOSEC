@@ -1,34 +1,27 @@
 package com.medstock.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.mapping.Document;
 import java.time.Instant;
 import java.util.UUID;
 
-@Entity
-@Table(name = "users")
+@Document("users")
 public class Account {
     @Id
     private UUID id;
 
-    @Column(nullable = false, unique = true, length = 120)
+    @Indexed(unique = true)
+    private String normalizedUsername;
+
     private String username;
 
-    @Column(name = "password_hash", nullable = false, length = 100)
     private String passwordHash;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 24)
     private Role role;
 
-    @Column(nullable = false)
     private boolean enabled = true;
 
-    @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
     protected Account() {}
@@ -36,6 +29,7 @@ public class Account {
     public Account(String username, String passwordHash, Role role) {
         this.id = UUID.randomUUID();
         this.username = username;
+        this.normalizedUsername = normalize(username);
         this.passwordHash = passwordHash;
         this.role = role;
         this.enabled = true;
@@ -44,7 +38,17 @@ public class Account {
 
     public UUID getId() { return id; }
     public String getUsername() { return username; }
+    public String getNormalizedUsername() { return normalizedUsername; }
     public String getPasswordHash() { return passwordHash; }
     public Role getRole() { return role; }
     public boolean isEnabled() { return enabled; }
+    public void updateCredentials(String passwordHash, Role role) {
+        this.passwordHash = passwordHash;
+        this.role = role;
+        this.enabled = true;
+    }
+
+    private static String normalize(String value) {
+        return value.trim().toLowerCase(java.util.Locale.ROOT);
+    }
 }

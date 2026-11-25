@@ -1,19 +1,14 @@
 package com.medstock.repository;
 
 import com.medstock.entity.Medicine;
-import jakarta.persistence.LockModeType;
-import java.util.Optional;
+import java.util.List;
 import java.util.UUID;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
-import org.springframework.data.jpa.repository.Lock;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.mongodb.repository.MongoRepository;
 
-public interface MedicineRepository extends JpaRepository<Medicine, UUID>, JpaSpecificationExecutor<Medicine> {
-    boolean existsBySkuIgnoreCase(String sku);
-
-    @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("select m from Medicine m where m.id = :id and m.archived = false")
-    Optional<Medicine> findActiveByIdForUpdate(@Param("id") UUID id);
+public interface MedicineRepository extends MongoRepository<Medicine, UUID> {
+    List<Medicine> findAllByArchivedFalse(Sort sort);
+    java.util.Optional<Medicine> findByIdAndArchivedFalse(UUID id);
+    boolean existsByNormalizedSku(String normalizedSku);
+    boolean existsByNormalizedSkuAndIdNot(String normalizedSku, UUID id);
 }
