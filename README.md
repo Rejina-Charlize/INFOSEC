@@ -1,49 +1,51 @@
 # MedStock
 
-MedStock is organized as a React/Vite frontend, a Java 25/Spring Boot REST API, and a PostgreSQL database. The administrator inventory screen is backed by the API; it does not contain hardcoded medicine rows.
+MedStock is a React/Vite frontend and Java 25/Spring Boot REST API backed by MongoDB. The administrator inventory screen loads medicine and stock data from the API.
+
+See [database/ERD.md](database/ERD.md) for the MongoDB data model.
 
 ## Requirements
 
 - Java 25
 - Maven 3.9+
 - Node.js 20.19+ and npm
-- Docker Desktop (or a local PostgreSQL 16+ instance)
+- MongoDB 7.0+ (local service or MongoDB Atlas)
 
 ## Run locally
 
-1. Start PostgreSQL:
+1. Start MongoDB. For a local Windows service, check it with:
 
    ```powershell
-   docker compose up -d postgres
+   Get-Service MongoDB
    ```
 
-   The database schema, indexes, and category records are initialized from `database/` on the first start. The compose defaults are for local development; change the database password before using a shared or deployed environment.
+   The default connection is `mongodb://localhost:27017/medstock`. For MongoDB Atlas or an authenticated server, set `MONGODB_URI` to the connection URI for your database.
 
-2. Set backend credentials and run Spring Boot. In PowerShell:
+2. Start the backend with the local profile:
 
    ```powershell
-   $env:DB_URL = "jdbc:postgresql://localhost:5432/medstock"
-   $env:DB_USERNAME = "medstock"
-   $env:DB_PASSWORD = "medstock"
-   $env:MEDSTOCK_ADMIN_USERNAME = "admin"
-   $env:MEDSTOCK_ADMIN_PASSWORD = "replace-with-a-strong-local-password"
-   # Optional pharmacist account for stock and dispensing operations:
-   $env:MEDSTOCK_PHARMACIST_USERNAME = "pharmacist"
-   $env:MEDSTOCK_PHARMACIST_PASSWORD = "replace-with-another-strong-password"
+   $env:SPRING_PROFILES_ACTIVE = "local"
+   # Optional: use another MongoDB URI:
+   # $env:MONGODB_URI = "mongodb://localhost:27017/medstock"
    mvn -f backend/pom.xml spring-boot:run
    ```
 
-   The first launch provisions configured staff accounts in PostgreSQL with BCrypt-hashed passwords. Set both pharmacist variables to provision that role. Do not use the example password outside local development.
+   The local profile provisions `admin@gmail.com` / `admin@123` and the `worker` / `worker-password` pharmacist demo account. It also adds four categories and five sample medicines with batches and stock movements. Demo data is inserted only when its SKU is missing and persists in MongoDB across restarts. These credentials and records are for local testing only; replace them before using a shared or production database.
 
-3. In a separate terminal, install frontend dependencies and start Vite:
+   For a non-local environment, set `MONGODB_URI`, `MEDSTOCK_ADMIN_USERNAME`, and `MEDSTOCK_ADMIN_PASSWORD`. Demo inventory is disabled by default; set `MEDSTOCK_DEMO_DATA=true` only when sample inventory is wanted.
+
+3. In a separate terminal, install frontend dependencies and start Vite from the repository root:
 
    ```powershell
-   cd frontend
    npm install
    npm run dev
    ```
 
    Open the Vite URL (normally `http://localhost:5173`). Vite proxies `/api` requests to Spring Boot at port 8080.
+
+## Staff accounts
+
+Sign in as an administrator and choose **Manage staff** in the sidebar to create pharmacist accounts for workers. Passwords are stored as BCrypt hashes. Only administrators can create staff accounts.
 
 ## API
 
@@ -55,28 +57,25 @@ All responses are JSON. Public read endpoints:
 | GET | `/api/medicines?page=0&size=8` | Searchable, filtered, paginated inventory |
 | GET | `/api/medicines/{id}` | Medicine, eligible stock, batches, and movement log |
 | GET | `/api/categories` | Active categories |
-| GET | `/api/dashboard/summary` | Inventory statistics calculated from PostgreSQL |
+| GET | `/api/dashboard/summary` | Inventory statistics calculated from MongoDB |
 
 Staff endpoints use HTTP Basic authentication and require the configured administrator or a pharmacist account:
 
 | Method | Path | Purpose |
 |---|---|---|
 | GET | `/api/auth/me` | Verify staff credentials |
+| POST | `/api/admin/accounts` | Create a pharmacist account (administrator only) |
 | POST | `/api/medicines` | Create a medicine |
 | PUT | `/api/medicines/{id}` | Update medicine details |
 | DELETE | `/api/medicines/{id}` | Archive a medicine while preserving history (administrator only) |
 | POST | `/api/medicines/{id}/adjustments` | Receive a dated batch or dispense stock using FEFO |
 
-Inventory filters include `search`, `category`, `prescription=true|false`, `stock=low|healthy`, and `expiry=soon|expired|ok`. Page size is limited to 100. Prices, stock, and batches are validated by the server.
-
-## Current scope
-
-The connected, working vertical slice covers inventory listing and detail data, database-derived dashboard metrics, medicine create/update/archive, batch receiving, FEFO dispensing, auditable stock movements, pagination, filters, CSV export, BCrypt-protected staff writes, and responsive React UI. The SQL schema reserves the related tables for the remaining storefront, order, supplier, purchase, and prescription phases; those modules are not yet exposed as completed features.
-
-No sample medicine or sales records are inserted. Add actual inventory through the staff interface or API. Categories are initialized as lookup values only.
+Inventory filters include `search`, `category`, `prescription=true|false`, `stock=low|healthy`, and `expiry=soon|expired|ok`. Page size is limited to 100.
 
 ## Project layout
 
 - `frontend/` — React, Vite, Tailwind CSS, Axios, React Router, Lucide React, Recharts
-- `backend/` — Spring Boot, Spring Security, Spring Data JPA, Bean Validation
-- `database/` — PostgreSQL schema, lookup seed data, and indexes
+- `backend/` — Spring Boot, Spring Security, Spring Data MongoDB, Bean Validation
+- `database/ERD.md` — MongoDB collection model
+
+The older PostgreSQL SQL files under `database/` are retained for reference only; the application no longer uses them.

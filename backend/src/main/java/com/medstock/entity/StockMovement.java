@@ -1,47 +1,35 @@
 package com.medstock.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
 import java.time.Instant;
 import java.util.UUID;
 
-@Entity
-@Table(name = "stock_movements")
+@Document("stock_movements")
 public class StockMovement {
     @Id
     private UUID id;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "medicine_id", nullable = false)
-    private Medicine medicine;
+    private UUID medicineId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "batch_id")
-    private MedicineBatch batch;
+    private UUID batchId;
+    private String batchNumber;
 
-    @Column(name = "movement_type", nullable = false, length = 40)
     private String movementType;
 
-    @Column(name = "quantity_delta", nullable = false)
     private int quantityDelta;
 
-    @Column(length = 500)
     private String note;
 
-    @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
     protected StockMovement() {}
 
     public StockMovement(Medicine medicine, MedicineBatch batch, String movementType, int quantityDelta, String note) {
         this.id = UUID.randomUUID();
-        this.medicine = medicine;
-        this.batch = batch;
+        this.medicineId = medicine.getId();
+        this.batchId = batch == null ? null : batch.getId();
+        this.batchNumber = batch == null ? null : batch.getBatchNumber();
         this.movementType = movementType;
         this.quantityDelta = quantityDelta;
         this.note = note;
@@ -49,7 +37,9 @@ public class StockMovement {
     }
 
     public UUID getId() { return id; }
-    public MedicineBatch getBatch() { return batch; }
+    public UUID getMedicineId() { return medicineId; }
+    public UUID getBatchId() { return batchId; }
+    public String getBatchNumber() { return batchNumber; }
     public String getMovementType() { return movementType; }
     public int getQuantityDelta() { return quantityDelta; }
     public String getNote() { return note; }

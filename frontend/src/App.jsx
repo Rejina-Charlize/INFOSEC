@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   AlertTriangle, ArrowDownToLine, Bell, Boxes, CalendarDays, Check,
   ChevronDown, ChevronLeft, ChevronRight, ClipboardList, Download,
@@ -6,9 +7,10 @@ import {
   Plus, Search, Settings, ShieldCheck, ShoppingCart, Stethoscope,
   Thermometer, Truck, X,
 } from "lucide-react";
+import ModulePages from "./ModulePages.jsx";
 import {
-  archiveMedicine, adjustStock, createMedicine, fetchDashboardSummary,
-  fetchMedicines, signIn, signOut, updateMedicine,
+  archiveMedicine, adjustStock, createMedicine, createStaffAccount, fetchDashboardSummary,
+  fetchMedicines, signOut, updateMedicine,
 } from "./services/api.js";
 
 const PAGE_SIZE = 8;
@@ -25,6 +27,15 @@ const EMPTY_MEDICINE = {
 };
 
 function App() {
+  const navigate = useNavigate();
+  const [activeSection, setActiveSection] = useState("inventory");
+  const [staff, setStaff] = useState(() => {
+    try {
+      return JSON.parse(sessionStorage.getItem("medstock-user")) || null;
+    } catch {
+      return null;
+    }
+  });
   const [medicines, setMedicines] = useState([]);
   const [summary, setSummary] = useState(null);
   const [categories, setCategories] = useState([]);
@@ -40,6 +51,7 @@ function App() {
   const [toast, setToast] = useState("");
   const [modal, setModal] = useState("");
   const [form, setForm] = useState(EMPTY_MEDICINE);
+  const [staffAccountBusy, setStaffAccountBusy] = useState(false);
   const [adjustment, setAdjustment] = useState({ direction: "receive", quantity: "", batchNumber: "", expirationDate: "" });
   const [busy, setBusy] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -94,9 +106,30 @@ function App() {
     setToast(message);
     window.setTimeout(() => setToast(""), 3000);
   };
+  const handleLogout = () => {
+    signOut();
+    setStaff(null);
+    navigate("/login", { replace: true });
+  };
+  const staffName = staff?.username || "MedStock staff";
+  const staffRole = staff?.role?.replace("ROLE_", "").replaceAll("_", " ").toLowerCase();
+  const staffInitials = staffName === "MedStock staff"
+    ? "MS"
+    : staffName
+      .split(/[\s._-]+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0])
+      .join("")
+      .toUpperCase();
   const changeFilter = (key, value) => {
     setPage(0);
     setFilters((current) => ({ ...current, [key]: value }));
+  };
+  const goToSection = (section) => {
+    setActiveSection(section);
+    setMobileNavOpen(false);
+    if (section === "inventory") setActiveTab("all");
   };
   const beginCreate = () => {
     setSelectedMedicine(null);
@@ -154,6 +187,21 @@ function App() {
     }
   }
 
+  async function submitStaffAccount(event) {
+    event.preventDefault();
+    const values = new FormData(event.currentTarget);
+    setStaffAccountBusy(true);
+    try {
+      const account = await createStaffAccount(values.get("username"), values.get("password"));
+      setModal("");
+      showToast(`Worker account created for ${account.username}.`);
+    } catch (requestError) {
+      showToast(requestError.response?.data?.message || "Could not create worker account.");
+    } finally {
+      setStaffAccountBusy(false);
+    }
+  }
+
   async function handleArchive(medicine) {
     if (!window.confirm(`Archive ${medicine.name}? It will be hidden from active inventory while historical records are retained.`)) return;
     try {
@@ -179,48 +227,35 @@ function App() {
     URL.revokeObjectURL(url);
   }
 
-  async function submitLogin(event) {
-    event.preventDefault();
-    const values = new FormData(event.currentTarget);
-    try {
-      await signIn(values.get("username"), values.get("password"));
-      setModal("");
-      showToast("Staff sign-in successful.");
-      await loadData();
-    } catch {
-      showToast("Sign-in failed. Check your staff credentials.");
-    }
-  }
-
   return (
     <div className="app-shell min-h-screen bg-slate-50 text-slate-800">
       <aside className={`sidebar ${mobileNavOpen ? "mobile-open" : ""}`}>
         <a className="brand" href="#inventory" aria-label="MedStock home"><span className="brand-mark"><Package size={23} strokeWidth={2.2} /></span><span className="brand-name">MedStock<small>ENTERPRISE</small></span></a>
         <div className="nav-caption">WORKSPACE</div>
         <nav className="primary-nav" aria-label="Main navigation">
-          <button className="nav-item" onClick={() => { setActiveTab("all"); setMobileNavOpen(false); }}><LayoutDashboard /><span>Dashboard</span></button>
-          <button className="nav-item active" aria-current="page" onClick={() => { setActiveTab("all"); setMobileNavOpen(false); }}><Boxes /><span>Medicine Inventory</span></button>
-          <button className="nav-item" onClick={() => { setActiveTab("expiring"); setMobileNavOpen(false); }}><CalendarDays /><span>Batch &amp; Expiry Tracker</span></button>
-          <button className="nav-item" onClick={() => { changeFilter("category", ""); setMobileNavOpen(false); }}><ClipboardList /><span>Categories</span></button>
-          <button className="nav-item" onClick={() => showToast("Supplier management will be enabled when its module is connected.")}><Truck /><span>Suppliers</span></button>
-          <button className="nav-item" onClick={() => showToast("Purchase order management will be enabled when its module is connected.")}><ShoppingCart /><span>Purchase Orders</span></button>
-          <button className="nav-item" onClick={() => showToast("Dispensing history will be enabled when its module is connected.")}><Stethoscope /><span>Dispense &amp; Sales History</span></button>
-          <button className="nav-item" onClick={() => showToast("Reports are calculated from the connected inventory data.")}><LayoutDashboard /><span>Reports &amp; Analytics</span></button>
+          <button className="nav-item" onClick={() => goToSection("inventory")}><LayoutDashboard /><span>Dashboard</span></button>
+          <button className={`nav-item ${activeSection === "inventory" && activeTab === "all" ? "active" : ""}`} aria-current={activeSection === "inventory" && activeTab === "all" ? "page" : undefined} onClick={() => goToSection("inventory")}><Boxes /><span>Medicine Inventory</span></button>
+          <button className={`nav-item ${activeSection === "inventory" && activeTab !== "all" ? "active" : ""}`} aria-current={activeSection === "inventory" && activeTab !== "all" ? "page" : undefined} onClick={() => { goToSection("inventory"); setActiveTab("expiring"); }}><CalendarDays /><span>Batch &amp; Expiry Tracker</span></button>
+          <button className="nav-item" onClick={() => { goToSection("inventory"); changeFilter("category", ""); }}><ClipboardList /><span>Categories</span></button>
+          <button className={`nav-item ${activeSection === "suppliers" ? "active" : ""}`} aria-current={activeSection === "suppliers" ? "page" : undefined} onClick={() => goToSection("suppliers")}><Truck /><span>Suppliers</span></button>
+          <button className={`nav-item ${activeSection === "orders" ? "active" : ""}`} aria-current={activeSection === "orders" ? "page" : undefined} onClick={() => goToSection("orders")}><ShoppingCart /><span>Purchase Orders</span></button>
+          <button className={`nav-item ${activeSection === "sales" ? "active" : ""}`} aria-current={activeSection === "sales" ? "page" : undefined} onClick={() => goToSection("sales")}><Stethoscope /><span>Dispense &amp; Sales History</span></button>
+          <button className={`nav-item ${activeSection === "reports" ? "active" : ""}`} aria-current={activeSection === "reports" ? "page" : undefined} onClick={() => goToSection("reports")}><LayoutDashboard /><span>Reports &amp; Analytics</span></button>
         </nav>
         <div className="sidebar-bottom">
           <div className="help-card"><strong>Need assistance?</strong><p>Our team is here to help you.</p><a href="mailto:support@medstock.example">Visit support center <span>›</span></a></div>
-          <button className="nav-item settings-link" onClick={() => setModal("login")}><Settings /><span>Staff sign in</span></button>
-          <div className="profile"><span className="avatar">MS</span><span className="profile-text"><strong>MedStock staff</strong><small>Inventory workspace</small></span><button className="icon-button profile-menu" aria-label="Sign out" onClick={() => { signOut(); showToast("Signed out."); }}><LogOut size={14} /></button></div>
+          <button className="nav-item settings-link" onClick={() => staff?.role === "ROLE_ADMINISTRATOR" ? setModal("create-staff") : navigate("/login")}><Settings /><span>{staff?.role === "ROLE_ADMINISTRATOR" ? "Manage staff" : "Switch account"}</span></button>
+          <div className="profile"><span className="avatar">{staffInitials}</span><span className="profile-text"><strong>{staffName}</strong><small>{staffRole ? staffRole.charAt(0).toUpperCase() + staffRole.slice(1) : "Inventory workspace"}</small></span><button className="icon-button profile-menu" aria-label="Sign out" title="Sign out" onClick={handleLogout}><LogOut size={14} /></button></div>
         </div>
       </aside>
 
       <main className="workspace min-w-0">
         <header className="topbar">
-          <label className="global-search"><Search size={15} aria-hidden="true" /><input id="medicine-search" type="search" value={query} onChange={(event) => { setPage(0); setQuery(event.target.value); }} placeholder="Search medicines by name, SKU, or batch number..." aria-label="Search medicines" /><kbd>⌘ K</kbd></label>
-          <div className="topbar-actions"><span className="online-status"><i /> Pharmacy Main #04 · Online</span><button className="icon-button notification-button" aria-label="Show expiring medicines" onClick={() => setActiveTab("expiring")}><Bell size={15} /><i /></button><button className="button button-primary add-stock" onClick={beginCreate}><Plus size={14} />Add New Stock</button><button className="workspace-switch" onClick={() => setModal("login")}>Workspace / Inventory <ChevronDown size={11} /></button><button className="mobile-menu icon-button" aria-label="Toggle navigation" onClick={() => setMobileNavOpen((open) => !open)}><Menu size={18} /></button></div>
+          {activeSection === "inventory" ? <label className="global-search"><Search size={15} aria-hidden="true" /><input id="medicine-search" type="search" value={query} onChange={(event) => { setPage(0); setQuery(event.target.value); }} placeholder="Search medicines by name, SKU, or batch number..." aria-label="Search medicines" /><kbd>⌘ K</kbd></label> : <div className="topbar-page-label">{activeSection === "suppliers" ? "Suppliers" : activeSection === "orders" ? "Purchase Orders" : activeSection === "sales" ? "Dispense & Sales History" : "Reports & Analytics"}</div>}
+          <div className="topbar-actions"><span className="online-status"><i /> Pharmacy Main #04 · Online</span><button className="icon-button notification-button" aria-label="Show expiring medicines" onClick={() => { goToSection("inventory"); setActiveTab("expiring"); }}><Bell size={15} /><i /></button>{activeSection === "inventory" && <button className="button button-primary add-stock" onClick={beginCreate}><Plus size={14} />Add New Stock</button>}<span className="workspace-switch">Workspace / {activeSection === "inventory" ? "Inventory" : activeSection === "suppliers" ? "Suppliers" : activeSection === "orders" ? "Purchase Orders" : activeSection === "sales" ? "Sales" : "Reports"} <ChevronDown size={11} /></span><button className="mobile-menu icon-button" aria-label="Toggle navigation" onClick={() => setMobileNavOpen((open) => !open)}><Menu size={18} /></button></div>
         </header>
 
-        <div className={`content ${selectedMedicine ? "" : "details-closed"}`}>
+        {activeSection === "inventory" ? <div className={`content ${selectedMedicine ? "" : "details-closed"}`}>
           <section className="main-column" id="inventory">
             <div className="breadcrumb">WORKSPACE <span>/</span> MEDICINE INVENTORY</div>
             <div className="page-heading"><div><h1>Inventory overview</h1><p>A clear view of your medicines, stock health, and upcoming expirations.</p></div><div className="last-updated">Updated just now<br /><span>Inventory synced with database</span></div></div>
@@ -244,13 +279,13 @@ function App() {
               {error && <div className="api-error" role="alert"><AlertTriangle size={15} /><span>{error}</span><button onClick={loadData}>Retry</button></div>}
               <div className="table-scroll"><table><thead><tr><th>Medicine &amp; dosage</th><th>SKU / Barcode</th><th>Category</th><th>Batch no.</th><th>Stock level</th><th>Expiry date</th><th>Unit price</th><th>Actions</th></tr></thead>
                 <tbody>{!loading && !error && medicines.map((medicine) => <MedicineRow key={medicine.id} medicine={medicine} selected={medicine.id === selectedMedicine?.id} onSelect={() => setSelectedMedicine(medicine)} onEdit={() => beginEdit(medicine)} onAdjust={() => { setSelectedMedicine(medicine); setModal("adjustment"); }} onArchive={() => handleArchive(medicine)} />)}</tbody>
-              </table>{!loading && !error && medicines.length === 0 && <p className="empty-state">No medicines match these filters. Add a medicine or adjust your search.</p>}{loading && <p className="empty-state">Loading medicines from PostgreSQL…</p>}</div>
+              </table>{!loading && !error && medicines.length === 0 && <p className="empty-state">No medicines match these filters. Add a medicine or adjust your search.</p>}{loading && <p className="empty-state">Loading medicines from MongoDB…</p>}</div>
               <div className="pagination"><span>Page {totalPages ? page + 1 : 0} of {totalPages} · {totalElements.toLocaleString()} medicines</span><div className="page-controls"><label>Rows per page <select value={PAGE_SIZE} disabled aria-label="Rows per page"><option>{PAGE_SIZE}</option></select></label><button aria-label="Previous page" disabled={page === 0} onClick={() => setPage((value) => Math.max(0, value - 1))}><ChevronLeft size={12} /></button><button className="current-page">{totalPages ? page + 1 : 0}</button><button aria-label="Next page" disabled={page + 1 >= totalPages} onClick={() => setPage((value) => Math.min(totalPages - 1, value + 1))}><ChevronRight size={12} /></button></div></div>
             </section>
-            <footer className="content-footer"><div><ShieldCheck className="footer-icon" size={14} /><strong>Inventory integrity</strong><p>All stock movements are securely logged and traceable.</p></div><div className="sync-note"><Check size={11} /> Auto-sync enabled<br /><span>Data served by PostgreSQL</span></div></footer>
+            <footer className="content-footer"><div><ShieldCheck className="footer-icon" size={14} /><strong>Inventory integrity</strong><p>All stock movements are securely logged and traceable.</p></div><div className="sync-note"><Check size={11} /> Auto-sync enabled<br /><span>Data served by MongoDB</span></div></footer>
           </section>
           {selectedMedicine && <MedicineDetails medicine={selectedMedicine} onClose={() => setSelectedMedicine(null)} onAdjust={() => setModal("adjustment")} onEdit={() => beginEdit(selectedMedicine)} />}
-        </div>
+        </div> : <div className="content details-closed module-content"><section className="main-column"><ModulePages section={activeSection} medicines={medicines} summary={summary} onInventoryChanged={loadData} onNavigate={goToSection} showToast={showToast} /></section></div>}
       </main>
 
       {(modal === "create-medicine" || modal === "edit-medicine") && <Modal title={modal === "edit-medicine" ? "Edit medicine" : "Add medicine"} onClose={() => setModal("")}><form className="modal-form" onSubmit={submitMedicine}>
@@ -268,7 +303,13 @@ function App() {
         <div className="modal-actions"><button type="button" className="button button-outline" onClick={() => setModal("")}>Cancel</button><button className="button button-primary" disabled={busy}>{busy ? "Recording…" : "Record adjustment"}</button></div>
       </form></Modal>}
 
-      {modal === "login" && <Modal title="Staff sign in" onClose={() => setModal("")}><form className="modal-form" onSubmit={submitLogin}><Field label="Username" name="username" required autoComplete="username" /><Field label="Password" name="password" type="password" required autoComplete="current-password" /><p className="form-hint">Staff accounts use the credentials configured in the backend environment.</p><div className="modal-actions"><button type="button" className="button button-outline" onClick={() => setModal("")}>Cancel</button><button className="button button-primary">Sign in</button></div></form></Modal>}
+      {modal === "create-staff" && staff?.role === "ROLE_ADMINISTRATOR" && <Modal title="Create worker account" onClose={() => setModal("")}><form className="modal-form" onSubmit={submitStaffAccount}>
+        <p className="form-hint">Create a pharmacist account for a worker. Share the username and password with them securely.</p>
+        <Field label="Worker username" name="username" required minLength="3" maxLength="120" pattern="[a-zA-Z0-9][a-zA-Z0-9._@+-]*" autoComplete="off" />
+        <Field label="Temporary password" name="password" type="password" required minLength="8" maxLength="72" autoComplete="new-password" />
+        <div className="modal-actions"><button type="button" className="button button-outline" onClick={() => setModal("")}>Cancel</button><button className="button button-primary" disabled={staffAccountBusy}>{staffAccountBusy ? "Creating…" : "Create account"}</button></div>
+      </form></Modal>}
+
       <div className={`toast ${toast ? "visible" : ""}`} role="status" aria-live="polite">{toast}</div>
     </div>
   );

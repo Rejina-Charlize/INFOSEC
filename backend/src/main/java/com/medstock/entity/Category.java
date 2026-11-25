@@ -1,35 +1,33 @@
 package com.medstock.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.mapping.Document;
 import java.time.Instant;
 import java.util.UUID;
 
-@Entity
-@Table(name = "categories")
+@Document("categories")
 public class Category {
     @Id
     private UUID id;
 
-    @Column(nullable = false, unique = true, length = 100)
     private String name;
 
-    @Column(length = 500)
     private String description;
 
-    @Column(nullable = false)
     private boolean active = true;
 
-    @Column(name = "created_at", nullable = false)
     private Instant createdAt;
+
+    @Indexed(unique = true)
+    private String normalizedName;
 
     protected Category() {}
 
     public Category(String name, String description) {
         this.id = UUID.randomUUID();
         this.name = name;
+        this.normalizedName = normalize(name);
         this.description = description;
         this.active = true;
         this.createdAt = Instant.now();
@@ -37,5 +35,10 @@ public class Category {
 
     public UUID getId() { return id; }
     public String getName() { return name; }
+    public String getNormalizedName() { return normalizedName; }
     public boolean isActive() { return active; }
+
+    private static String normalize(String value) {
+        return value.trim().toLowerCase(java.util.Locale.ROOT);
+    }
 }
